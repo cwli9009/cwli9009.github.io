@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>翻頁相簿</title>
+  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turn.js@3/turn.min.js"></script>
+  <style>
+    body {
+      background-color: #aaa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #flipbook {
+      width: 800px;
+      height: 600px;
+    }
+
+    #flipbook .page {
+      width: 400px;
+      height: 600px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    #flipbook .page img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+<div id="flipbook">
+  <div class="page"><img src="0.png" alt="封面"></div>
+  <div class="page"><img src="1.png" alt="中頁左"></div>
+  <div class="page"><img src="2.png" alt="中頁右"></div>
+  <div class="page"><img src="3.png" alt="封底"></div>
+</div>
+
+<script>
+  $(document).ready(function(){
+    $('#flipbook').turn({
+      width: 800,         // 整體寬度（兩頁）
+      height: 600,        // 高度
+      autoCenter: true,   // 自動置中
+      elevation: 50,      // 翻頁陰影
+      gradients: true     // 漸層陰影
+    });
+  });
+</script>
+
+</body>
+</html>
