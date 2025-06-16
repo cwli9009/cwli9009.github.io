@@ -3,88 +3,83 @@
 <head>
   <meta charset="UTF-8">
   <title>喜帖</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
   <style>
+    /* --- 全域重置 & 容器 --- */
+    * { box-sizing:border-box; margin:0; padding:0; }
     html, body {
-      margin: 0; padding: 0;
-      width: 100vw; height: 100vh;
-      background: #eee;
-      overflow: hidden;
+      width:100vw; height:100vh;
+      overflow:hidden;
+      background:#eee;
     }
     body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      width: 100vw;
+      display:flex;
+      justify-content:center;
+      align-items:center;
     }
     #album {
-      position: relative;
-      display: flex;
-      align-items: center;    /* 圖片 & 線都置中 */
-      justify-content: center;
-      width: 100vw; height: 100vh;
-      margin: 0; padding: 0;
-      overflow: hidden;
-      cursor: pointer;
+      position:relative;
+      width:100vw; height:100vh;
+      display:flex;
+      align-items:center;    /* 垂直置中 */
+      justify-content:center;
+      cursor:pointer;
+      overflow:hidden;
     }
+
+    /* --- 雙頁 左右欄 --- */
     .side {
-      width: 50vw;
-      min-width: 0; min-height: 0;
-      display: flex;
-      align-items: center;
-      overflow: hidden;
+      width:50%;          /* 各佔一半 */
+      height:100%;        /* 撐滿 container 高度 */
+      display:flex;
+      align-items:center; /* 圖片垂直置中 */
+      overflow:hidden;
     }
-    .side.left { justify-content: flex-end; }
-    .side.right { justify-content: flex-start; }
-    .side img {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      display: block;
-      user-select: none;
-      box-sizing: border-box;
-      margin: 0; padding: 0;
-      transition: height 0.2s;
-    }
-    .side.blank { /* 空白側什麼都不顯示 */ }
-    .middle-line {
-      position: absolute;
-      left: 50%; transform: translateX(-50%);
-      width: 2px;
-      background: #bbb;
-      opacity: 0.7;
-      pointer-events: none;
-      transition: height 0.2s, top 0.2s;
-    }
-    .single-img {
-      position: relative;
-      width: 100vw !important;
-      height: 100vh !important;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
+    .side.left  { justify-content:flex-end; }  /* 左頁貼中線 */
+    .side.right { justify-content:flex-start;}  /* 右頁貼中線 */
+
+    /* --- 圖片縮放 --- */
+    .side img,
     .single-img img {
-      width: 100vw !important;
-      height: 100vh !important;
-      object-fit: contain;
-      display: block;
-      user-select: none;
-      margin: 0; padding: 0;
-      box-sizing: border-box;
+      max-width:100%;    /* 不超過父層寬度 */
+      max-height:100%;   /* 不超過父層高度 */
+      object-fit:contain;
+      display:block;
+      user-select:none;
     }
+
+    /* --- 分隔線 --- */
+    .middle-line {
+      position:absolute;
+      left:50%; transform:translateX(-50%);
+      width:2px;
+      background:#bbb;
+      opacity:0.7;
+      pointer-events:none;
+      transition:height 0.2s, top 0.2s;
+    }
+
+    /* --- 單頁模式 --- */
+    .single-img {
+      position:relative;
+      width:100vw; height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+    }
+
+    /* --- 頁碼 --- */
     #counter {
-      position: absolute;
-      bottom: 12px; right: 24px;
-      background: rgba(238,238,238,0.8);
-      padding: 3px 14px;
-      border-radius: 8px;
-      font-size: 1.1rem;
-      color: #555;
-      letter-spacing: 2px;
-      z-index: 20;
+      position:absolute;
+      bottom:12px; right:24px;
+      background:rgba(238,238,238,0.8);
+      padding:3px 14px;
+      border-radius:8px;
+      font-size:1.1rem;
+      color:#555;
+      letter-spacing:2px;
+      z-index:20;
     }
   </style>
 </head>
@@ -93,118 +88,116 @@
   <div id="counter">1 / 4</div>
 
   <script>
+    // 左右雙頁資料，[左, 右]，空白用 null
     const doublePages = [
-      [null,    '0.PNG'],
+      [null,    '0.PNG'], 
       ['1.PNG', '2.PNG'],
       ['3.PNG', null   ]
     ];
 
+    // 將雙頁轉成單頁序列（只保留有圖）
     function getSinglePages() {
       return doublePages.flat().filter(src => src);
     }
 
     let current = 0, singleIndex = 0;
+    const album   = document.getElementById('album');
+    const counter = document.getElementById('counter');
 
     function isSingle() {
       return window.innerWidth < 700;
     }
 
-    const album = document.getElementById('album');
-    const counter = document.getElementById('counter');
-
     function render() {
       album.innerHTML = '';
       if (!isSingle()) {
-        // 雙頁
-        const [leftSrc, rightSrc] = doublePages[current];
-        const leftSide = document.createElement('div');
-        leftSide.className = 'side left';
-        const rightSide = document.createElement('div');
-        rightSide.className = 'side right';
+        // —— 桌機：雙頁模式 —— 
+        const [lSrc, rSrc] = doublePages[current];
+        const left  = document.createElement('div');
+        const right = document.createElement('div');
+        left.className  = 'side left';
+        right.className = 'side right';
 
         let leftImg, rightImg;
-        if (leftSrc) {
+        if (lSrc) {
           leftImg = document.createElement('img');
-          leftImg.src = leftSrc;
-          leftImg.alt = '喜帖';
-          leftSide.appendChild(leftImg);
-        } else leftSide.classList.add('blank');
-
-        if (rightSrc) {
+          leftImg.src = lSrc; leftImg.alt = '喜帖';
+          left.appendChild(leftImg);
+        }
+        if (rSrc) {
           rightImg = document.createElement('img');
-          rightImg.src = rightSrc;
-          rightImg.alt = '喜帖';
-          rightSide.appendChild(rightImg);
-        } else rightSide.classList.add('blank');
+          rightImg.src = rSrc; rightImg.alt = '喜帖';
+          right.appendChild(rightImg);
+        }
 
-        album.appendChild(leftSide);
+        album.appendChild(left);
 
-        // 中線
+        // —— 中線 —— 
         const line = document.createElement('div');
         line.className = 'middle-line';
-        function adjust() {
-          const h1 = leftImg ? leftImg.getBoundingClientRect().height : 0;
-          const h2 = rightImg ? rightImg.getBoundingClientRect().height : 0;
-          const H = Math.max(h1, h2);
+
+        function adjustLine() {
+          // 取左右圖最大客製高度
+          const h1 = leftImg?.getBoundingClientRect().height || 0;
+          const h2 = rightImg?.getBoundingClientRect().height || 0;
+          const H  = Math.max(h1, h2);
           if (H > 0) {
             line.style.height = H + 'px';
-            line.style.top = `calc(50% - ${H/2}px)`;
+            line.style.top    = `calc(50% - ${H/2}px)`;
           } else {
             line.style.height = '100vh';
-            line.style.top = '0';
+            line.style.top    = '0';
           }
         }
-        ;[leftImg, rightImg].forEach(img => {
-          if (img) img.onload = adjust;
-        });
-        setTimeout(adjust, 100);
-        album.appendChild(line);
+        [leftImg, rightImg].forEach(img => img?.addEventListener('load', adjustLine));
+        setTimeout(adjustLine, 100);
 
-        album.appendChild(rightSide);
+        album.appendChild(line);
+        album.appendChild(right);
+
         counter.textContent = `${current+1} / ${doublePages.length}`;
       } else {
-        // 單頁
+        // —— 手機：單頁模式 —— 
         const singles = getSinglePages();
         const src = singles[singleIndex];
-        const div = document.createElement('div');
-        div.className = 'single-img';
         if (src) {
+          const div = document.createElement('div');
+          div.className = 'single-img';
           const img = document.createElement('img');
-          img.src = src;
-          img.alt = '喜帖';
+          img.src = src; img.alt = '喜帖';
           div.appendChild(img);
+          album.appendChild(div);
         }
-        album.appendChild(div);
         counter.textContent = `${singleIndex+1} / ${singles.length}`;
       }
     }
 
-    function next() {
+    function nextPage() {
       if (!isSingle()) {
         current = (current + 1) % doublePages.length;
       } else {
-        const s = getSinglePages();
-        singleIndex = (singleIndex + 1) % s.length;
+        const a = getSinglePages();
+        singleIndex = (singleIndex + 1) % a.length;
       }
       render();
     }
-    function prev() {
+    function prevPage() {
       if (!isSingle()) {
         current = (current - 1 + doublePages.length) % doublePages.length;
       } else {
-        const s = getSinglePages();
-        singleIndex = (singleIndex - 1 + s.length) % s.length;
+        const a = getSinglePages();
+        singleIndex = (singleIndex - 1 + a.length) % a.length;
       }
       render();
     }
 
     album.onclick = e => {
-      const x = e.clientX, w = album.offsetWidth;
-      x < w/2 ? prev() : next();
+      const mid = album.offsetWidth / 2;
+      e.clientX < mid ? prevPage() : nextPage();
     };
     document.addEventListener('keydown', e => {
-      if (e.key==='ArrowLeft') prev();
-      if (e.key==='ArrowRight'||e.key===' ') next();
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight' || e.key === ' ') nextPage();
     });
     window.addEventListener('resize', render);
 
