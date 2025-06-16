@@ -6,79 +6,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     html, body {
-      width: 100vw; height: 100vh;
       margin: 0; padding: 0;
+      width: 100vw; height: 100vh;
       background: #eee;
       overflow: hidden;
     }
     body {
+      width: 100vw; height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
-      min-width: 100vw;
-      box-sizing: border-box;
     }
     #album {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      background: #fff;
-      box-shadow: 0 8px 24px #0003;
-      border-radius: 12px;
+      width: 100vw;
+      height: 100vh;
       cursor: pointer;
+      background: none;
+      box-shadow: none;
+      border-radius: 0;
+      margin: 0; padding: 0;
       position: relative;
       overflow: hidden;
-      /* 預設尺寸，會根據螢幕自動調整 */
-      max-width: 98vw;
-      max-height: 95vh;
-      width: auto;
-      height: auto;
+      min-width: 0;
+      min-height: 0;
+    }
+    .side {
+      width: 50vw;
+      height: 100vh;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      background: none;
+      overflow: hidden;
+      position: relative;
+      transition: width 0.2s;
+    }
+    .side.left {
+      justify-content: flex-end; /* 左邊圖片靠右貼中線 */
+    }
+    .side.right {
+      justify-content: flex-start; /* 右邊圖片靠左貼中線 */
+    }
+    .side img {
+      height: 100%;
+      max-width: 100%;
+      object-fit: contain;
+      display: block;
+      user-select: none;
+      background: none;
+      border: none;
       margin: 0;
       padding: 0;
-      transition: all 0.2s;
+      min-width: 0;
+      min-height: 0;
     }
-    #album img {
-      display: block;
-      width: auto;
-      height: auto;
-      max-width: 98vw;
-      max-height: 95vh;
-      object-fit: contain;
-      user-select: none;
-      background: #fff;
-    }
-    .double {
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
-    .double img {
-      width: 50vw;
-      height: auto;
-      max-width: 49vw;
-      max-height: 95vh;
-      object-fit: contain;
-      background: #fff;
+    .side.blank {
+      background: none;
     }
     #counter {
-      margin: 18px 0 0 0;
+      margin: 8px 0 0 0;
       font-size: 1.1rem;
       color: #555;
       letter-spacing: 2px;
+      background: rgba(238,238,238,0.8);
+      border-radius: 8px;
+      padding: 3px 14px;
+      position: absolute;
+      bottom: 12px;
+      right: 24px;
+      z-index: 2;
+    }
+    @media (max-width: 900px) {
+      .side, #album {
+        height: 60vw;
+        max-height: 90vh;
+      }
     }
     @media (max-width: 600px) {
-      #album {
-        max-width: 100vw;
-        max-height: 80vh;
-        border-radius: 4vw;
-      }
-      .double img {
-        width: 48vw;
-        max-width: 48vw;
+      .side, #album {
+        height: 66vw;
+        min-height: 40vw;
         max-height: 80vh;
       }
+      #counter { font-size: 1rem; }
     }
   </style>
 </head>
@@ -87,74 +103,110 @@
   <div id="counter">1 / 3</div>
 
 <script>
+  // [左, 右] 雙欄，每頁都必有2欄，空白用 null
   const pages = [
-    { type: 'single', src: '0.PNG' },
-    { type: 'double', src: ['1.PNG', '2.PNG'] },
-    { type: 'single', src: '3.PNG' }
+    [null,    '0.PNG'],      // 封面：左空，右圖片
+    ['1.PNG', '2.PNG'],      // 內頁：左右都有圖
+    ['3.PNG', null   ]       // 封底：左有圖，右空
   ];
   let current = 0;
+  let singleIndex = 0; // for single page mode
+
+  // 偵測是否要進入單頁模式
+  function isSinglePage() {
+    return window.innerWidth <= 600;
+  }
+
   const album = document.getElementById('album');
   const counter = document.getElementById('counter');
 
   function render() {
     album.innerHTML = '';
-    if (pages[current].type === 'single') {
-      const img = document.createElement('img');
-      img.src = pages[current].src;
-      img.alt = '喜帖';
-      album.appendChild(img);
-    } else if (pages[current].type === 'double') {
-      const div = document.createElement('div');
-      div.className = 'double';
-      for (const src of pages[current].src) {
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = '喜帖';
-        div.appendChild(img);
+    if (!isSinglePage()) {
+      // 雙頁模式
+      for (let i = 0; i < 2; i++) {
+        const src = pages[current][i];
+        const side = document.createElement('div');
+        side.className = 'side ' + (i === 0 ? 'left' : 'right');
+        if (src) {
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = '喜帖';
+          side.appendChild(img);
+        } else {
+          side.classList.add('blank');
+        }
+        album.appendChild(side);
       }
-      album.appendChild(div);
+      counter.textContent = (current + 1) + ' / ' + pages.length;
+    } else {
+      // 單頁模式
+      // 用 singleIndex 指定顯示哪一個（左或右）
+      const page = pages[current];
+      let pageCount = pages.length * 2;
+      let pageNumber = current * 2 + singleIndex + 1;
+      const side = document.createElement('div');
+      side.className = 'side single';
+      if (page[singleIndex]) {
+        const img = document.createElement('img');
+        img.src = page[singleIndex];
+        img.alt = '喜帖';
+        side.appendChild(img);
+      } else {
+        side.classList.add('blank');
+      }
+      album.appendChild(side);
+      counter.textContent = pageNumber + ' / ' + pageCount;
     }
-    counter.textContent = (current + 1) + ' / 3';
   }
 
   album.onclick = function() {
-    current = (current + 1) % pages.length;
-    render();
+    if (!isSinglePage()) {
+      current = (current + 1) % pages.length;
+      render();
+    } else {
+      // 單頁模式，點擊切換左/右，然後才換下一個雙頁
+      singleIndex++;
+      if (singleIndex >= 2) {
+        singleIndex = 0;
+        current = (current + 1) % pages.length;
+      }
+      render();
+    }
   };
 
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === ' ') {
-      current = (current + 1) % pages.length;
-      render();
-    } else if (e.key === 'ArrowLeft') {
-      current = (current - 1 + pages.length) % pages.length;
-      render();
+    if (!isSinglePage()) {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        current = (current + 1) % pages.length;
+        render();
+      } else if (e.key === 'ArrowLeft') {
+        current = (current - 1 + pages.length) % pages.length;
+        render();
+      }
+    } else {
+      // 單頁模式
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        singleIndex++;
+        if (singleIndex >= 2) {
+          singleIndex = 0;
+          current = (current + 1) % pages.length;
+        }
+        render();
+      } else if (e.key === 'ArrowLeft') {
+        singleIndex--;
+        if (singleIndex < 0) {
+          singleIndex = 1;
+          current = (current - 1 + pages.length) % pages.length;
+        }
+        render();
+      }
     }
   });
 
-  // 強制縮放 album 框大小以「剛好容納原始圖片」但又不超出視窗
-  function fitAlbum() {
-    let isDouble = pages[current].type === 'double';
-    let imgs = [];
-    if (isDouble) {
-      imgs = pages[current].src;
-    } else {
-      imgs = [pages[current].src];
-    }
-    // 預設為最大寬高（不超出螢幕）
-    album.style.maxWidth = (isDouble ? "98vw" : "98vw");
-    album.style.maxHeight = (window.innerWidth < 600 ? "80vh" : "95vh");
-  }
+  window.addEventListener('resize', render);
 
-  window.addEventListener('resize', fitAlbum);
-
-  // 每次渲染時呼叫
-  function renderAndFit() {
-    render();
-    fitAlbum();
-  }
-
-  renderAndFit();
+  render();
 </script>
 </body>
 </html>
