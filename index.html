@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/turn.js@3/turn.min.js"></script>
   <style>
     body {
-      background-color: #aaa;
+      background-color: #ccc;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -20,14 +20,14 @@
       height: 600px;
     }
 
-    #flipbook .page {
+    .page {
       width: 400px;
       height: 600px;
-      background: #fff;
+      background: white;
       overflow: hidden;
     }
 
-    #flipbook .page img {
+    .page img {
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -38,20 +38,18 @@
 
 <div id="flipbook">
   <div class="page"><img src="0.png" alt="封面"></div>
-  <div class="page"><img src="1.png" alt="中頁左"></div>
-  <div class="page"><img src="2.png" alt="中頁右"></div>
+  <div class="page"><img src="1.png" alt="中頁1"></div>
+  <div class="page"><img src="2.png" alt="中頁2"></div>
   <div class="page"><img src="3.png" alt="封底"></div>
 </div>
 
 <script>
-  $(document).ready(function(){
-    $('#flipbook').turn({
-      width: 800,         // 整體寬度（兩頁）
-      height: 600,        // 高度
-      autoCenter: true,   // 自動置中
-      elevation: 50,      // 翻頁陰影
-      gradients: true     // 漸層陰影
-    });
+  $('#flipbook').turn({
+    width: 800,
+    height: 600,
+    autoCenter: true,
+    elevation: 50,
+    gradients: true
   });
 </script>
 
