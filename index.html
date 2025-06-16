@@ -3,82 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <title>喜帖</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    /* --- 全域重置 & 容器 --- */
-    * { box-sizing:border-box; margin:0; padding:0; }
-    html, body {
+    * { margin:0; padding:0; box-sizing:border-box }
+    html,body {
       width:100vw; height:100vh;
-      overflow:hidden;
-      background:#eee;
+      background:#eee; overflow:hidden;
     }
     body {
-      display:flex;
-      justify-content:center;
-      align-items:center;
+      display:flex; justify-content:center; align-items:center;
     }
     #album {
       position:relative;
       width:100vw; height:100vh;
-      display:flex;
-      align-items:center;    /* 垂直置中 */
-      justify-content:center;
-      cursor:pointer;
-      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; cursor:pointer;
     }
-
-    /* --- 雙頁 左右欄 --- */
     .side {
-      width:50%;          /* 各佔一半 */
-      height:100%;        /* 撐滿 container 高度 */
-      display:flex;
-      align-items:center; /* 圖片垂直置中 */
-      overflow:hidden;
+      display:flex; align-items:center; overflow:hidden;
+      height:auto; /* 由圖片決定高度 */
     }
-    .side.left  { justify-content:flex-end; }  /* 左頁貼中線 */
-    .side.right { justify-content:flex-start;}  /* 右頁貼中線 */
-
-    /* --- 圖片縮放 --- */
-    .side img,
-    .single-img img {
-      max-width:100%;    /* 不超過父層寬度 */
-      max-height:100%;   /* 不超過父層高度 */
-      object-fit:contain;
-      display:block;
+    .side.left  { justify-content:flex-end; }
+    .side.right { justify-content:flex-start; }
+    .side.single {
+      width:100vw; justify-content:center;
+    }
+    .side.dual {
+      width:50vw;
+    }
+    .side img {
+      max-width:100%; max-height:100vh;
+      object-fit:contain; display:block;
       user-select:none;
     }
-
-    /* --- 分隔線 --- */
     .middle-line {
       position:absolute;
       left:50%; transform:translateX(-50%);
-      width:2px;
-      background:#bbb;
-      opacity:0.7;
+      width:2px; background:#bbb; opacity:0.7;
       pointer-events:none;
-      transition:height 0.2s, top 0.2s;
+      transition:height .2s, top .2s;
     }
-
-    /* --- 單頁模式 --- */
-    .single-img {
-      position:relative;
-      width:100vw; height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      overflow:hidden;
-    }
-
-    /* --- 頁碼 --- */
     #counter {
-      position:absolute;
-      bottom:12px; right:24px;
+      position:absolute; bottom:12px; right:24px;
       background:rgba(238,238,238,0.8);
-      padding:3px 14px;
-      border-radius:8px;
-      font-size:1.1rem;
-      color:#555;
-      letter-spacing:2px;
+      padding:3px 14px; border-radius:8px;
+      font-size:1.1rem; color:#555; letter-spacing:2px;
       z-index:20;
     }
   </style>
@@ -86,120 +55,121 @@
 <body>
   <div id="album" title="點擊左右切換"></div>
   <div id="counter">1 / 4</div>
-
   <script>
-    // 左右雙頁資料，[左, 右]，空白用 null
     const doublePages = [
-      [null,    '0.PNG'], 
+      [null,    '0.PNG'],
       ['1.PNG', '2.PNG'],
       ['3.PNG', null   ]
     ];
 
-    // 將雙頁轉成單頁序列（只保留有圖）
-    function getSinglePages() {
-      return doublePages.flat().filter(src => src);
+    // 展平成單頁
+    function getSingle() {
+      return doublePages.flat().filter(x=>x);
     }
 
-    let current = 0, singleIndex = 0;
+    let current=0, singleIndex=0, forceSingle=false;
     const album   = document.getElementById('album');
     const counter = document.getElementById('counter');
 
-    function isSingle() {
+    function widthSingle() {
       return window.innerWidth < 700;
     }
 
     function render() {
       album.innerHTML = '';
-      if (!isSingle()) {
-        // —— 桌機：雙頁模式 —— 
-        const [lSrc, rSrc] = doublePages[current];
+      const useSingle = widthSingle() || forceSingle;
+      if (!useSingle) {
+        // —— 雙頁模式 —— 
+        const [lSrc,rSrc] = doublePages[current];
         const left  = document.createElement('div');
         const right = document.createElement('div');
-        left.className  = 'side left';
-        right.className = 'side right';
+        left.className  = 'side dual left';
+        right.className = 'side dual right';
 
-        let leftImg, rightImg;
+        let imgL, imgR;
         if (lSrc) {
-          leftImg = document.createElement('img');
-          leftImg.src = lSrc; leftImg.alt = '喜帖';
-          left.appendChild(leftImg);
+          imgL = document.createElement('img');
+          imgL.src=lSrc; imgL.alt='喜帖';
+          left.appendChild(imgL);
         }
         if (rSrc) {
-          rightImg = document.createElement('img');
-          rightImg.src = rSrc; rightImg.alt = '喜帖';
-          right.appendChild(rightImg);
+          imgR = document.createElement('img');
+          imgR.src=rSrc; imgR.alt='喜帖';
+          right.appendChild(imgR);
         }
-
         album.appendChild(left);
 
-        // —— 中線 —— 
+        // 分隔線
         const line = document.createElement('div');
-        line.className = 'middle-line';
-
-        function adjustLine() {
-          // 取左右圖最大客製高度
-          const h1 = leftImg?.getBoundingClientRect().height || 0;
-          const h2 = rightImg?.getBoundingClientRect().height || 0;
-          const H  = Math.max(h1, h2);
+        line.className='middle-line';
+        function adjust() {
+          const h1 = imgL?.getBoundingClientRect().height || 0;
+          const h2 = imgR?.getBoundingClientRect().height || 0;
+          const H  = Math.max(h1,h2);
+          // 決定是否切回單頁：當雙頁高度小於 60% 視窗
+          forceSingle = (H > 0 && H < window.innerHeight*0.6);
+          if (forceSingle) {
+            render();  // 低於門檻，重繪成單頁
+            return;
+          }
           if (H > 0) {
-            line.style.height = H + 'px';
+            line.style.height = H+'px';
             line.style.top    = `calc(50% - ${H/2}px)`;
           } else {
             line.style.height = '100vh';
             line.style.top    = '0';
           }
         }
-        [leftImg, rightImg].forEach(img => img?.addEventListener('load', adjustLine));
-        setTimeout(adjustLine, 100);
+        [imgL,imgR].forEach(i=>i?.addEventListener('load',adjust));
+        setTimeout(adjust,100);
 
         album.appendChild(line);
         album.appendChild(right);
-
         counter.textContent = `${current+1} / ${doublePages.length}`;
       } else {
-        // —— 手機：單頁模式 —— 
-        const singles = getSinglePages();
+        // —— 單頁模式 —— 
+        const singles = getSingle();
         const src = singles[singleIndex];
+        const div = document.createElement('div');
+        div.className='side single';
         if (src) {
-          const div = document.createElement('div');
-          div.className = 'single-img';
           const img = document.createElement('img');
-          img.src = src; img.alt = '喜帖';
+          img.src=src; img.alt='喜帖';
           div.appendChild(img);
-          album.appendChild(div);
         }
+        album.appendChild(div);
         counter.textContent = `${singleIndex+1} / ${singles.length}`;
       }
     }
 
-    function nextPage() {
-      if (!isSingle()) {
-        current = (current + 1) % doublePages.length;
+    function next() {
+      if (!widthSingle() && !forceSingle) {
+        current=(current+1)%doublePages.length;
       } else {
-        const a = getSinglePages();
-        singleIndex = (singleIndex + 1) % a.length;
+        const s=getSingle();
+        singleIndex=(singleIndex+1)%s.length;
       }
       render();
     }
-    function prevPage() {
-      if (!isSingle()) {
-        current = (current - 1 + doublePages.length) % doublePages.length;
+    function prev() {
+      if (!widthSingle() && !forceSingle) {
+        current=(current-1+doublePages.length)%doublePages.length;
       } else {
-        const a = getSinglePages();
-        singleIndex = (singleIndex - 1 + a.length) % a.length;
+        const s=getSingle();
+        singleIndex=(singleIndex-1+s.length)%s.length;
       }
       render();
     }
 
-    album.onclick = e => {
-      const mid = album.offsetWidth / 2;
-      e.clientX < mid ? prevPage() : nextPage();
+    album.onclick = e=>{
+      const w=album.offsetWidth;
+      e.clientX<w/2?prev():next();
     };
-    document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') prevPage();
-      if (e.key === 'ArrowRight' || e.key === ' ') nextPage();
+    document.addEventListener('keydown',e=>{
+      if(e.key==='ArrowLeft') prev();
+      if(e.key==='ArrowRight'||e.key===' ') next();
     });
-    window.addEventListener('resize', render);
+    window.addEventListener('resize', ()=>{ forceSingle=false; render(); });
 
     render();
   </script>
