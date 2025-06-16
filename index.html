@@ -2,56 +2,159 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>翻頁相簿</title>
-  <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/turn.js@3/turn.min.js"></script>
+  <title>喜帖</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      background-color: #ccc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    #flipbook {
-      width: 800px;
-      height: 600px;
-    }
-
-    .page {
-      width: 400px;
-      height: 600px;
-      background: white;
+    html, body {
+      width: 100vw; height: 100vh;
+      margin: 0; padding: 0;
+      background: #eee;
       overflow: hidden;
     }
-
-    .page img {
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-width: 100vw;
+      box-sizing: border-box;
+    }
+    #album {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      box-shadow: 0 8px 24px #0003;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      /* 預設尺寸，會根據螢幕自動調整 */
+      max-width: 98vw;
+      max-height: 95vh;
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      transition: all 0.2s;
+    }
+    #album img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 98vw;
+      max-height: 95vh;
+      object-fit: contain;
+      user-select: none;
+      background: #fff;
+    }
+    .double {
+      display: flex;
       width: 100%;
       height: 100%;
-      object-fit: cover;
+    }
+    .double img {
+      width: 50vw;
+      height: auto;
+      max-width: 49vw;
+      max-height: 95vh;
+      object-fit: contain;
+      background: #fff;
+    }
+    #counter {
+      margin: 18px 0 0 0;
+      font-size: 1.1rem;
+      color: #555;
+      letter-spacing: 2px;
+    }
+    @media (max-width: 600px) {
+      #album {
+        max-width: 100vw;
+        max-height: 80vh;
+        border-radius: 4vw;
+      }
+      .double img {
+        width: 48vw;
+        max-width: 48vw;
+        max-height: 80vh;
+      }
     }
   </style>
 </head>
 <body>
-
-<div id="flipbook">
-  <div class="page"><img src="0.png" alt="封面"></div>
-  <div class="page"><img src="1.png" alt="中頁1"></div>
-  <div class="page"><img src="2.png" alt="中頁2"></div>
-  <div class="page"><img src="3.png" alt="封底"></div>
-</div>
+  <div id="album" title="點擊切換頁面"></div>
+  <div id="counter">1 / 3</div>
 
 <script>
-  $('#flipbook').turn({
-    width: 800,
-    height: 600,
-    autoCenter: true,
-    elevation: 50,
-    gradients: true
-  });
-</script>
+  const pages = [
+    { type: 'single', src: '0.PNG' },
+    { type: 'double', src: ['1.PNG', '2.PNG'] },
+    { type: 'single', src: '3.PNG' }
+  ];
+  let current = 0;
+  const album = document.getElementById('album');
+  const counter = document.getElementById('counter');
 
+  function render() {
+    album.innerHTML = '';
+    if (pages[current].type === 'single') {
+      const img = document.createElement('img');
+      img.src = pages[current].src;
+      img.alt = '喜帖';
+      album.appendChild(img);
+    } else if (pages[current].type === 'double') {
+      const div = document.createElement('div');
+      div.className = 'double';
+      for (const src of pages[current].src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '喜帖';
+        div.appendChild(img);
+      }
+      album.appendChild(div);
+    }
+    counter.textContent = (current + 1) + ' / 3';
+  }
+
+  album.onclick = function() {
+    current = (current + 1) % pages.length;
+    render();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      current = (current + 1) % pages.length;
+      render();
+    } else if (e.key === 'ArrowLeft') {
+      current = (current - 1 + pages.length) % pages.length;
+      render();
+    }
+  });
+
+  // 強制縮放 album 框大小以「剛好容納原始圖片」但又不超出視窗
+  function fitAlbum() {
+    let isDouble = pages[current].type === 'double';
+    let imgs = [];
+    if (isDouble) {
+      imgs = pages[current].src;
+    } else {
+      imgs = [pages[current].src];
+    }
+    // 預設為最大寬高（不超出螢幕）
+    album.style.maxWidth = (isDouble ? "98vw" : "98vw");
+    album.style.maxHeight = (window.innerWidth < 600 ? "80vh" : "95vh");
+  }
+
+  window.addEventListener('resize', fitAlbum);
+
+  // 每次渲染時呼叫
+  function renderAndFit() {
+    render();
+    fitAlbum();
+  }
+
+  renderAndFit();
+</script>
 </body>
 </html>
