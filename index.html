@@ -107,7 +107,7 @@
           const h2 = imgR?.getBoundingClientRect().height || 0;
           const H  = Math.max(h1,h2);
           // 決定是否切回單頁：當雙頁高度小於 60% 視窗
-          forceSingle = (H > 0 && H < window.innerHeight*0.6);
+          forceSingle = (H > 0 && H < window.innerHeight*0.7);
           if (forceSingle) {
             render();  // 低於門檻，重繪成單頁
             return;
